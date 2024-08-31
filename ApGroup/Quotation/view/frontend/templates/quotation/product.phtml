@@ -1,0 +1,55 @@
+<?php
+// Use the block to generate the form action URL dynamically
+$formActionUrl = $block->getUrl('apgroup/quotation/productsave');
+?>
+<form id="quotation-form" action="<?php echo $formActionUrl; ?>" method="post">
+    <input type="hidden" id="quotation_id" name="quotation_id"> <!-- Hidden field for quotation ID -->
+
+    <label for="product_name">Product Name:</label>
+    <input type="text" id="product_name" name="product_name" required><br><br>
+
+    <label for="product_gst">Product GST:</label>
+    <input type="text" id="product_gst" name="product_gst" required><br><br>
+
+    <label for="price">Price:</label>
+    <input type="text" id="price" name="price" required><br><br>
+
+    <button type="submit" id="form-submit-button">Save Product</button>
+</form>
+
+<div id="response-message"></div>
+
+<!-- Include jQuery if not already included -->
+<!--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>-->
+
+<script type="text/javascript">
+    require(['jquery'], function($) {
+        $(document).ready(function () {
+            // Handle Add/Update Quotation Form Submission
+            $('#quotation-form').submit(function (event) {
+                event.preventDefault(); // Prevent the form from submitting the traditional way
+
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    url: "<?php echo $formActionUrl; ?>",
+                    type: "POST",
+                    data: formData,
+                    success: function (response) {
+                        $('#response-message').html(response.message);
+
+                        if (response.status) {
+                            // Reset the form
+                            $('#quotation-form')[0].reset();
+                            $('#quotation_id').val('');
+                            $('#form-submit-button').text('Save Product');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#response-message').html('<p>Something went wrong. Please try again later.</p>');
+                    }
+                });
+            });
+        });
+    });
+</script>

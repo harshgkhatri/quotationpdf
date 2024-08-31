@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+
+    <table name="ap_group_products" resource="default" engine="innodb" comment="AP Group Products Table">
+        <!-- Primary key column -->
+        <column xsi:type="int" name="id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+
+        <!-- Product Name column -->
+        <column xsi:type="varchar" name="product_name" nullable="false" length="255" comment="Product Name"/>
+
+        <!-- Product GST column -->
+        <column xsi:type="decimal" name="product_gst" nullable="false" precision="12" scale="2" comment="Product GST"/>
+
+        <!-- Product Price column -->
+        <column xsi:type="decimal" name="price" nullable="false" precision="12" scale="2" comment="Product Price"/>
+
+        <!-- Primary Key Constraint -->
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="id"/>
+        </constraint>
+    </table>
+
+</schema>

@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <body>
+        <referenceBlock name="page.main.title">
+            <action method="setPageTitle">
+                <argument translate="true" name="title" xsi:type="string">Create Product</argument>
+            </action>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block class="ApGroup\Quotation\Block\Quotation\Data" name="custom-tab" template="ApGroup_Quotation::quotation/product.phtml" />
+        </referenceContainer>
+    </body>
+
+</page>

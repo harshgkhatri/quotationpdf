@@ -1,0 +1,316 @@
+<?php
+// Fetch products from the database
+$products = $block->getProducts(); // Assuming you've created a method in your block to fetch products
+?>
+
+<div class="product-form-header">
+    <button type="button" id="add-product-button" class="button-add-product"
+            onclick="location.href = '<?php echo $block->getUrl('apgroup/quotation/product'); ?>'">
+        Add Product
+    </button>
+</div>
+
+<form id="quotation-form">
+    <div class="form-group">
+        <label for="product">Product:</label>
+        <select id="product" name="product" required>
+            <option value="">Select a product</option>
+
+            <?php foreach ($products as $product): ?>
+                <option value="<?php echo $product->getId(); ?>"
+                        data-gst="<?php echo $product->getProductGst(); ?>"
+                        data-price="<?php echo $product->getPrice(); ?>">
+                    <?php echo $product->getProductName(); ?>
+                </option>
+            <?php endforeach; ?>
+
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+    </div>
+
+    <div class="form-group">
+        <label for="product_gst">GST (%):</label>
+        <input type="text" id="product_gst" name="product_gst" readonly>
+    </div>
+
+    <div class="form-group">
+        <label for="price">Price:</label>
+        <input type="text" id="price" name="price" required>
+    </div>
+
+    <div class="form-group">
+        <label for="total_price">Total Price:</label>
+        <input type="text" id="total_price" name="total_price" readonly>
+    </div>
+
+    <div class="form-group">
+        <label for="grand_total">Grand Total:</label>
+        <input type="text" id="grand_total" name="grand_total" readonly>
+    </div>
+
+    <button type="button" id="form-submit-button">Add To Quotation</button>
+</form>
+
+<div id="response-message"></div>
+
+<!-- Table to display added products -->
+<h2>Quotation Details</h2>
+<table id="quotation-table" border="1" cellspacing="0" cellpadding="5" style="width: 100%; margin-top: 20px;">
+    <thead>
+    <tr>
+        <th>Product</th>
+        <th>Quantity</th>
+        <th>GST (%)</th>
+        <th>Price</th>
+        <th>Total Price</th>
+        <th>Grand Total</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Rows will be appended here -->
+    </tbody>
+</table>
+
+<!-- Party Name field placed before Save Quotation button -->
+<div class="form-group">
+    <label for="party_name">Party Name:</label>
+    <input type="text" id="party_name" name="party_name" required>
+</div>
+
+<!-- Button to save the entire quotation -->
+<button type="submit" id="save-quotation-button" style="margin-top: 20px; display: none;" disabled>Save Quotation</button>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script type="text/javascript">
+    require(['jquery'], function($) {
+        $(document).ready(function () {
+            // Disable Save Quotation button initially
+            $('#save-quotation-button').prop('disabled', true);
+
+            // Enable Save Quotation button only if Party Name is filled
+            $('#party_name').on('input', function () {
+                var partyName = $('#party_name').val().trim();
+                if (partyName.length > 0) {
+                    $('#save-quotation-button').prop('disabled', false);
+                } else {
+                    $('#save-quotation-button').prop('disabled', true);
+                }
+            });
+
+            // Update GST and Price fields when a product is selected
+            $('#product').change(function () {
+                var selectedOption = $(this).find('option:selected');
+                var gst = selectedOption.data('gst');
+                var price = selectedOption.data('price');
+
+                $('#product_gst').val(gst);
+                $('#price').val(price);
+                calculateTotals();
+            });
+
+            // Recalculate totals when quantity or price changes
+            $('#quantity, #price').on('input', function () {
+                calculateTotals();
+            });
+
+            // Function to calculate total price and grand total
+            function calculateTotals() {
+                var quantity = parseFloat($('#quantity').val());
+                var price = parseFloat($('#price').val());
+                var gst = parseFloat($('#product_gst').val());
+
+                if (!isNaN(quantity) && !isNaN(price)) {
+                    var totalPrice = quantity * price;
+                    $('#total_price').val(totalPrice.toFixed(2));
+
+                    if (!isNaN(gst)) {
+                        var gstAmount = totalPrice * (gst / 100);
+                        var grandTotal = totalPrice + gstAmount;
+                        $('#grand_total').val(grandTotal.toFixed(2));
+                    }
+                }
+            }
+
+            // Handle Add to Quotation button click
+            $('#form-submit-button').click(function () {
+                var productId = $('#product').val();
+                var productName = $('#product option:selected').text();
+                var quantity = $('#quantity').val();
+                var productGst = $('#product_gst').val();
+                var price = $('#price').val();
+                var totalPrice = $('#total_price').val();
+                var grandTotal = $('#grand_total').val();
+
+                if (productId && quantity && price) {
+                    var row = '<tr>' +
+                        '<td>' + productName + '</td>' +
+                        '<td>' + quantity + '</td>' +
+                        '<td>' + productGst + '</td>' +
+                        '<td>' + price + '</td>' +
+                        '<td>' + totalPrice + '</td>' +
+                        '<td>' + grandTotal + '</td>' +
+                        '<td><button type="button" class="delete-row-button">Delete</button></td>' +
+                        '</tr>';
+
+                    $('#quotation-table tbody').append(row);
+                    $('#save-quotation-button').show();
+
+                    // Reset the form
+                    $('#quotation-form')[0].reset();
+                    $('#quotation_id').val('');
+                    $('#form-submit-button').text('Add To Quotation');
+
+                    // Check if Party Name is filled
+                    var partyName = $('#party_name').val().trim();
+                    if (partyName.length > 0) {
+                        $('#save-quotation-button').prop('disabled', false);
+                    }
+                }
+            });
+
+            // Handle row deletion
+            $(document).on('click', '.delete-row-button', function () {
+                $(this).closest('tr').remove();
+
+                if ($('#quotation-table tbody tr').length === 0) {
+                    $('#save-quotation-button').hide();
+                }
+            });
+
+            // Handle Save Quotation button click
+            // Handle Save Quotation button click
+            $('#save-quotation-button').click(function () {
+                var quotationData = [];
+                var partyName = $('#party_name').val().trim(); // Get the party name
+
+                $('#quotation-table tbody tr').each(function () {
+                    var row = $(this);
+                    var product = row.find('td:eq(0)').text();
+                    var quantity = row.find('td:eq(1)').text();
+                    var gst = row.find('td:eq(2)').text();
+                    var price = row.find('td:eq(3)').text();
+                    var totalPrice = row.find('td:eq(4)').text();
+                    var grandTotal = row.find('td:eq(5)').text();
+
+                    quotationData.push({
+                        product: product,
+                        quantity: quantity,
+                        gst: gst,
+                        price: price,
+                        total_price: totalPrice,
+                        grand_total: grandTotal
+                    });
+                });
+
+                $.ajax({
+                    url: "<?php echo $block->getUrl('apgroup/quotation/save'); ?>",
+                    type: "POST",
+                    data: {
+                        quotation: quotationData,
+                        party_name: partyName // Pass party name
+                    },
+                    success: function (response) {
+                        $('#response-message').html(response.message);
+
+                        if (response.status) {
+                            $('#quotation-table tbody').empty();
+                            $('#quotation-form')[0].reset(); // Reset all form fields including Party Name
+                            $('#save-quotation-button').hide();
+                            $('#save-quotation-button').prop('disabled', true); // Disable the Save Quotation button
+                            $('#response-message').html('<p>Quotation saved successfully!</p>');
+                            window.location.href = response.file_url;
+
+                            $.ajax({
+                                url: "<?php echo $block->getUrl('apgroup/quotation/deleteFile'); ?>",
+                                type: "POST",
+                                data: { file_url: response.file_url },
+                                success: function(deleteResponse) {
+                                    console.log('File deleted successfully:', deleteResponse);
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Failed to delete file:', error);
+                                }
+                            });
+
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#response-message').html('<p>Something went wrong. Please try again later.</p>');
+                    }
+                });
+            });
+
+        });
+    });
+</script>
+
+<style>
+    .product-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .button-add-product {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .button-add-product:hover {
+        background-color: #45a049;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+
+    #form-submit-button, #save-quotation-button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    #form-submit-button:hover, #save-quotation-button:hover {
+        background-color: #45a049;
+    }
+
+    .delete-row-button {
+        background-color: #f44336;
+        color: white;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .delete-row-button:hover {
+        background-color: #e53935;
+    }
+</style>
